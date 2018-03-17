@@ -1,0 +1,37 @@
+基于socket
+常用socket类型
+1. SOCK_DGRAM  基于UDP
+2. SOCK_STREAM 基于TCP
+3. SOCK_RAW    基于IP
+
+struct sockaddr
+{
+    u_short sa_family; //地址类型  AF_INET(IP协议族)
+    char sa_data[14];  //地址值 14字节
+}
+实际中 更常用
+struct sockaddr_in
+{
+    short sin_family;          /* 地址类型  AF_INET(IP协议族) */
+    unsigned short sin_port;   /* 端口，使用htons()函数转换成网络数据格式的数字)*/
+    struct in_addr sin_addr;   /* 地址 */
+    unsigned char sin_zero[8]; /* 预留 */
+};
+
+    “192.168.0.1” 《===》 32位的IP地址
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+int inet_aton(const char *string, struct in_addr*addr);
+char*inet_ntoa(struct in_addr in);
+
+    网络统一使用大端模式，将
+#include <arpa/inet.h>
+uint32_t htonl(uint32_t hostlong);//发送时使用
+uint16_t htons(uint16_t hostshort);
+uint32_t ntohl(uint32_t netlong);//接收时使用
+uint16_t ntohs(uint16_t netshort);
+
+      主机名和IP转换
+#include <netdb.h>
+struct hostent *gethostbyname(const char *name);
