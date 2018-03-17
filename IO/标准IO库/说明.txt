@@ -1,0 +1,19 @@
+FILE *fopen(const char *path, const char *mode);
+其中mode可以是
+r     只读
+r+    读或写
+w     只写（存在清空  不存在创建）
+w+    读或写（存在清空  不存在创建）
+a     只写（存在，EOF后追加  不存在创建）
+a+    读或写（存在，EOF前追加  不存在创建）
+
+
+#include <stdio.h>
+extern FILE *stdin;   标准输入
+extern FILE *stdout;  标准输出（有缓冲）
+extern FILE *stderr;  标准错误输出（无缓冲）
+
+
+
+
+
