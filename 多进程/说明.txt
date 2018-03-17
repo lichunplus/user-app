@@ -1,0 +1,3 @@
+区别一
+master退出后，用fork创建的进程依旧在后台执行
+master退出后，所有pthread创建的线程被强制退出
