@@ -1,0 +1,8 @@
+           =====服务器端=====               ======客服端=======
+1.创建一个socket     socket                 创建一个socket
+2.绑定IP端口         bind                   设置连接服务器IP和端口
+3.设置最大允许连接数 listen                     
+4.阻塞等待连接       accept                 连接  
+5.发送或者接收       send recv              recv send
+                     read write             write read
+6.关闭连接           close                  关闭连接 close 

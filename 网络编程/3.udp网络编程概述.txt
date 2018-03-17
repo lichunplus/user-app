@@ -1,0 +1,6 @@
+           =====没有绝对的服务器和客服端的说法=======
+1.创建一个socket     socket                 创建一个socket
+2.绑定IP端口         bind                   设置连接服务器IP和端口
+3.发送或者接收       send recv              recv send
+                     read write             write read
+4.关闭连接           close                  关闭连接 close 
