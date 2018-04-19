@@ -2,6 +2,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 //gcc main.c -lpthread
+//线程1自增变量1，线程2自增变量2
+//两者相差不能大于5，初始信号量为5
 
 sem_t sem1,sem2;
 void *thread1_handler()
