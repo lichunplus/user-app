@@ -8,13 +8,14 @@ int main()
         perror("fork");
     else if(pid == 0) {
         /* Child */
-        printf("Child\n");
+        printf("Child: %d\n", getpid());
 
     } else if(pid > 0) {
         /* Father */
-        printf("Father\n");
+        printf("Father: %d\n", getpid());
     }
-    /* Master */
-    printf("Master\n");
+    /* Common text segment */
+    printf("Common: %d\n", getpid());
+    
     return 0;
 }

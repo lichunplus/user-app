@@ -1,0 +1,401 @@
+#
+# 64-bit system call numbers and entry vectors
+#
+# The format is:
+# <number> <abi> <name> <entry point>
+#
+# The abi is "common", "64" or "x32" for this file.
+#
+#文件读写
+0	common	read			read(fd, buf, 10)，读到buf中
+1	common	write			write(fd, buf, 10)，写到fd中去
+17	common	pread64			pread(fd, buf, 10, 0) 带有offset的read
+18	common	pwrite64		pwrite(fd, buf, 10, 4096),随机写
+19	64	readv			readv(fd, iv, 2)读到离散向量中
+20	64	writev			writev(fd, iv, 2))写到离散向量中
+295	64	preadv			preadv(fd, iv, 2,offset)随机读到离散向量中
+296	64	pwritev			pwritev(fd, iv, 2,offset)随机写到离散向量中
+74	common	fsync			fsync(fd)同步metadata+data
+75	common	fdatasync		fdatasync(fd)只同步data部分
+43	common	access			access("./demo.txt", F_OK)判断文件存在
+95	common	umask			umask(0000)设置反掩码，默认0022
+                            struct stat hstat;,获取文件的stat
+85	common	creat			creat("./demo.txt", 0777)创建文件
+77	common	ftruncate		ftruncate(fd, 1*1024*1024*1024)修改文件大小
+76	common	truncate		truncate("/opt/hello", 1*1024*1024*1024)同上
+4	common	stat			stat("/etc/hosts", &hstat);//获取文件stat
+6	common	lstat			lstat("/etc/hosts", &hstat);作用链接文件
+5	common	fstat			fstat(fd, &hstat);作用最终文件
+                            轮询pollfd pfd[2];数组设置要返回的事件
+23	common	select			select(1, &rfds, NULL, NULL, &tv)低时钟精度
+270	common	pselect6		pselect(1,&rfds,NULL,NULL,&tv,sigmask)屏蔽信号
+7	common	poll			poll(pfd, 2, -1 /* ms; Wait forever */)
+271	common	ppoll			poll(pfd,2,-1,sigmask)屏蔽信号
+                            设置相对偏移量，SEEK_SET（头）
+                            SEEK_CUR（当前）  SEEK_END（尾）
+                            fd_set rfds; FD_SET(0, &rfds);
+8	common	lseek			lseek(fd, 200, int whence);
+9	common	mmap			prt=mmap(NULL,4096,PROT_READ,
+                                    MAP_PRIVATE, fd, 1024);地址由OS分配
+11	common	munmap			munmap(prt, 200)
+10	common	mprotect		mprotect(ptr, psize*10, PROT_NONE)内存保护
+103	common	syslog			syslog(LOG_INFO, "program started.");
+#fd操作
+2	common	open		fd=open("/dev/null",O_RDONLY);
+257	common	openat		openat(dir_fd,"../file",O_RDWR,0640);
+3	common	close		close(fd)
+32	common	dup			fd2=dup(fd1),fd1和fd2指向同一个file_struct
+33	common	dup2		fd2=dup2(fd1,fd2)复制fd并使用fd2指示的fd值
+#信号
+282	common	signalfd		signal(SIGINT, sigint_handler);
+289	common	signalfd4		signal(SIGINT, sigint_handler);
+                            struct sigaction act;
+13	64	rt_sigaction		sigaction(SIGINT, &act, NULL);
+                            sigset_t *restrict set，oldset；信号集
+                            查询或修改进程的信号屏蔽字。how：
+                            SIG_BLOCK   处理函数屏蔽set信号
+                            SIG_UNBLOCK 取消set信号的屏蔽
+                            SIG_SETMASK 重设set，默认是当前信号
+14	common	rt_sigprocmask	sigprocmask(SIG_BLOCK,set,unset)
+                            如果是线程则要用pthread_sigmask()
+15	64	rt_sigreturn		信号处理函数执行完后自动调用
+                            以便回到内核态，不返回，特殊系统调用
+62	common	kill			kill(pid,15)发送信号
+16	64	ioctl			ioctl(fd,KVM_RUN, 1);设备特殊方法
+#网络编程
+41	common	socket			socket(AF_INET,SOCK_STREAM,0)创建sock fd
+                            struct sockaddr_in serv_addr;绑定地址
+49	common	bind			bind(sfd,&serv_add,sizeof(serv_addr))
+50	common	listen			listen(sfd, 20)//请求队列长度20
+21	common	accept			cfd=accept(sfd,&clnt_addr,&clnt_addr_size)
+42	common	connect			connect(cfd,&serv_addr,sizeof(serv_addr))
+#udp
+44	common	sendto	sendto(fd,buf,strlen(buf),0,dest_addr, addrlen)
+45	64	recvfrom	recvfrom(fd,buf,sizeof(buf),0,src_addr,addrlen)
+                            how:禁止读SHUT_RD,禁止写SHUT_WR,禁止读写SHUT_RDWR
+48	common	shutdown		shutdown(fd,how)限制socket权限
+#epoll
+213	common	epoll_create		sys_epoll_create
+214	64	epoll_ctl_old
+215	64	epoll_wait_old
+
+51	common	getsockname		sys_getsockname
+52	common	getpeername		sys_getpeername
+53	common	socketpair		sys_socketpair
+54	64	setsockopt		sys_setsockopt
+55	64	getsockopt		sys_getsockopt
+
+
+
+
+
+
+#pipe匿名管道
+22	common	pipe			int fd[2];pipe(fd);一个fd写会被另一个fd读
+#消息队列
+68	common	msgget		msqid=msgget(1234, IPC_CREAT | 0666)
+69	common	msgsnd		msgsnd(msqid,&msg,sizeof(msg),IPC_NOWAIT)
+70	common	msgrcv		msgrcv(msgid,&msg,sizeof(msg),0,IPC_NOWAIT)
+71	common	msgctl		msgctl(msgid,IPC_RMID,&buf)删除消息
+#共享内存
+                   创建一个1024字节的共享内存区域
+29	common	shmget id=shmget((key_t)25,1024,IPC_CREAT|IPC_EXCL|0600)
+30	common	shmat	ptf=shmat(shmid, 0, 0)attch
+67	common	shmdt	shmdt(ptf)  detach
+31	common	shmctl	shmctl(shmid,IPC_RMID,0)删除共享内存
+#eventfd                    就是一个uint64_t的变量位于内核
+284	common	eventfd			int efd=eventfd(1,0)；创建一个event fd
+290	common	eventfd2		int efd=eventfd(1,0)；创建一个event fd
+
+#时间编程                   保持时区struct timeval tv，
+96	common	gettimeofday	gettimeofday(&tv,&tz);保存时区struct timeval tz
+201	common	time			time_t epoch=time()//1970到现在的秒
+
+#进程
+57	common	fork			fork()创建子进程
+60	common	exit			exit(-1),返回值被父进程的wait捕获
+                            wait相关调用用于监控某个进程状态改变
+61	common	wait4			过时，请使用waitid或waitpid
+247	64	waitid			waitpid(cpid, &status, WUNTRACED | WCONTINUED)
+
+520	x32	execve			execve("/bin/ls",["-al","/"],NULL)加载并执行ELF文件
+
+# AIO
+206	common	io_setup		io_setup(MAX_EVENTS, &ctx)初始化AIO上下文
+                            至少返回2个，并设置超时时间
+208	common	io_getevents	io_getevents(ctx,2,MAX_EVENTS,events,&ts)
+209	common	io_submit		io_submit(s->ctx,3,&iocbs)提交三个请求
+210	common	io_cancel		io_cancel(ctx, &iocb, &event)取消
+207	common	io_destroy		io_destroy(&ctx)删除上下文
+#信号量                     获取信号量集合，返回标识ipcs可查
+64	common	semget			sem1=semget((key_t)1234,5,IPC_CREAT|0666))
+                            sops为P：{0, -1, SEM_UNDO},V：{0, +1, SEM_UNDO}
+65	common	semop			semop(sem_id,&sops[0],1)
+66	common	semctl			semctl(sem1,0,IPC_RMID,0);删除信号集
+
+
+#目录
+79	common	getcwd			getcwd(buffer,PATH_MAX)#buffer为PWD的字符串
+83	common	mkdir			mkdir("dir1", 0755)创建目录
+161	common	chroot			chroot(".")改变进程根目录
+80	common	chdir			chdir("dir1")切换当前工作目录
+81	common	fchdir			fchdir(fd),fd=open("./dir", O_RDONLY)同上
+258	common	mkdirat			mkdirat(fd,"./dir",0755)相对路径基于fd计算
+84	common	rmdir			rmdir("/dir1")删除一个目录
+
+#系统管理                   reboot or enable/disable Ctrl-Alt-Del
+169	common	reboot			reboot(LINUX_REBOOT_CMD_POWER_OFF)关机
+63	common	uname			uname(&uts)获取系统名版本号和主机名struct utsname uts;
+
+
+#文件系统
+
+#ID管理
+12	common	brk				brk(addr)设置进程data segment的结束位置
+39	common	getpid			getpid()获取进程PID
+102	common	getuid			uid_t ruid=getuid()进程属于User的id(root:0)
+104	common	getgid			sys_getgid
+105	common	setuid			sys_setuid
+106	common	setgid			sys_setgid
+107	common	geteuid			sys_geteuid
+108	common	getegid			sys_getegid
+109	common	setpgid			sys_setpgid
+110	common	getppid			sys_getppid
+24	common	sched_yield		sys_sched_yield
+25	common	mremap			sys_mremap
+26	common	msync			sys_msync
+27	common	mincore			sys_mincore
+28	common	madvise			sys_madvise
+34	common	pause			sys_pause
+35	common	nanosleep		sys_nanosleep
+36	common	getitimer		sys_getitimer
+37	common	alarm			sys_alarm
+38	common	setitimer		sys_setitimer
+40	common	sendfile		sys_sendfile64
+46	64	sendmsg			sys_sendmsg
+47	64	recvmsg			sys_recvmsg
+56	common	clone			stub_clone
+58	common	vfork			stub_vfork
+59	64	execve			stub_execve
+72	common	fcntl			sys_fcntl
+73	common	flock			sys_flock
+78	common	getdents		sys_getdents
+82	common	rename			sys_rename
+86	common	link			sys_link
+87	common	unlink			sys_unlink
+88	common	symlink			sys_symlink
+89	common	readlink		sys_readlink
+90	common	chmod			sys_chmod
+91	common	fchmod			sys_fchmod
+92	common	chown			sys_chown
+93	common	fchown			sys_fchown
+94	common	lchown			sys_lchown
+97	common	getrlimit		sys_getrlimit
+98	common	getrusage		sys_getrusage
+99	common	sysinfo			sys_sysinfo
+100	common	times			sys_times
+101	64	ptrace			sys_ptrace
+111	common	getpgrp			sys_getpgrp
+112	common	setsid			sys_setsid
+113	common	setreuid		sys_setreuid
+114	common	setregid		sys_setregid
+115	common	getgroups		sys_getgroups
+116	common	setgroups		sys_setgroups
+117	common	setresuid		sys_setresuid
+118	common	getresuid		sys_getresuid
+119	common	setresgid		sys_setresgid
+120	common	getresgid		sys_getresgid
+121	common	getpgid			sys_getpgid
+122	common	setfsuid		sys_setfsuid
+123	common	setfsgid		sys_setfsgid
+124	common	getsid			sys_getsid
+125	common	capget			sys_capget
+126	common	capset			sys_capset
+127	64	rt_sigpending		sys_rt_sigpending
+128	64	rt_sigtimedwait		sys_rt_sigtimedwait
+129	64	rt_sigqueueinfo		sys_rt_sigqueueinfo
+130	common	rt_sigsuspend		sys_rt_sigsuspend
+131	64	sigaltstack		sys_sigaltstack
+132	common	utime			sys_utime
+133	common	mknod			sys_mknod
+134	64	uselib
+135	common	personality		sys_personality
+136	common	ustat			sys_ustat
+137	common	statfs			sys_statfs
+138	common	fstatfs			sys_fstatfs
+139	common	sysfs			sys_sysfs
+140	common	getpriority		sys_getpriority
+141	common	setpriority		sys_setpriority
+142	common	sched_setparam		sys_sched_setparam
+143	common	sched_getparam		sys_sched_getparam
+144	common	sched_setscheduler	sys_sched_setscheduler
+145	common	sched_getscheduler	sys_sched_getscheduler
+146	common	sched_get_priority_max	sys_sched_get_priority_max
+147	common	sched_get_priority_min	sys_sched_get_priority_min
+148	common	sched_rr_get_interval	sys_sched_rr_get_interval
+149	common	mlock			sys_mlock
+150	common	munlock			sys_munlock
+151	common	mlockall		sys_mlockall
+152	common	munlockall		sys_munlockall
+153	common	vhangup			sys_vhangup
+154	common	modify_ldt		sys_modify_ldt
+155	common	pivot_root		sys_pivot_root
+156	64	_sysctl			sys_sysctl
+157	common	prctl			sys_prctl
+158	common	arch_prctl		sys_arch_prctl
+159	common	adjtimex		sys_adjtimex
+160	common	setrlimit		sys_setrlimit
+162	common	sync			sys_sync
+163	common	acct			sys_acct
+164	common	settimeofday		sys_settimeofday
+165	common	mount			sys_mount
+166	common	umount2			sys_umount
+167	common	swapon			sys_swapon
+168	common	swapoff			sys_swapoff
+170	common	sethostname		sys_sethostname
+171	common	setdomainname		sys_setdomainname
+172	common	iopl			stub_iopl
+173	common	ioperm			sys_ioperm
+174	64	create_module
+175	common	init_module		sys_init_module
+176	common	delete_module		sys_delete_module
+177	64	get_kernel_syms
+178	64	query_module
+179	common	quotactl		sys_quotactl
+180	64	nfsservctl
+181	common	getpmsg
+182	common	putpmsg
+183	common	afs_syscall
+184	common	tuxcall
+185	common	security
+186	common	gettid			sys_gettid
+187	common	readahead		sys_readahead
+188	common	setxattr		sys_setxattr
+189	common	lsetxattr		sys_lsetxattr
+190	common	fsetxattr		sys_fsetxattr
+191	common	getxattr		sys_getxattr
+192	common	lgetxattr		sys_lgetxattr
+193	common	fgetxattr		sys_fgetxattr
+194	common	listxattr		sys_listxattr
+195	common	llistxattr		sys_llistxattr
+196	common	flistxattr		sys_flistxattr
+197	common	removexattr		sys_removexattr
+198	common	lremovexattr		sys_lremovexattr
+199	common	fremovexattr		sys_fremovexattr
+200	common	tkill			sys_tkill
+202	common	futex			sys_futex
+203	common	sched_setaffinity	sys_sched_setaffinity
+204	common	sched_getaffinity	sys_sched_getaffinity
+205	64	set_thread_area
+211	64	get_thread_area
+212	common	lookup_dcookie		sys_lookup_dcookie
+216	common	remap_file_pages	sys_remap_file_pages
+217	common	getdents64		sys_getdents64
+218	common	set_tid_address		sys_set_tid_address
+219	common	restart_syscall		sys_restart_syscall
+220	common	semtimedop		sys_semtimedop
+221	common	fadvise64		sys_fadvise64
+222	64	timer_create		sys_timer_create
+223	common	timer_settime		sys_timer_settime
+224	common	timer_gettime		sys_timer_gettime
+225	common	timer_getoverrun	sys_timer_getoverrun
+226	common	timer_delete		sys_timer_delete
+227	common	clock_settime		sys_clock_settime
+228	common	clock_gettime		sys_clock_gettime
+229	common	clock_getres		sys_clock_getres
+230	common	clock_nanosleep		sys_clock_nanosleep
+231	common	exit_group		sys_exit_group
+232	common	epoll_wait		sys_epoll_wait
+233	common	epoll_ctl		sys_epoll_ctl
+234	common	tgkill			sys_tgkill
+235	common	utimes			sys_utimes
+236	64	vserver
+237	common	mbind			sys_mbind
+238	common	set_mempolicy		sys_set_mempolicy
+239	common	get_mempolicy		sys_get_mempolicy
+240	common	mq_open			sys_mq_open
+241	common	mq_unlink		sys_mq_unlink
+242	common	mq_timedsend		sys_mq_timedsend
+243	common	mq_timedreceive		sys_mq_timedreceive
+244	64	mq_notify		sys_mq_notify
+245	common	mq_getsetattr		sys_mq_getsetattr
+246	64	kexec_load		sys_kexec_load
+248	common	add_key			sys_add_key
+249	common	request_key		sys_request_key
+250	common	keyctl			sys_keyctl
+251	common	ioprio_set		sys_ioprio_set
+252	common	ioprio_get		sys_ioprio_get
+253	common	inotify_init		sys_inotify_init
+254	common	inotify_add_watch	sys_inotify_add_watch
+255	common	inotify_rm_watch	sys_inotify_rm_watch
+256	common	migrate_pages		sys_migrate_pages
+259	common	mknodat			sys_mknodat
+260	common	fchownat		sys_fchownat
+261	common	futimesat		sys_futimesat
+262	common	newfstatat		sys_newfstatat
+263	common	unlinkat		sys_unlinkat
+264	common	renameat		sys_renameat
+265	common	linkat			sys_linkat
+266	common	symlinkat		sys_symlinkat
+267	common	readlinkat		sys_readlinkat
+268	common	fchmodat		sys_fchmodat
+269	common	faccessat		sys_faccessat
+272	common	unshare			sys_unshare
+273	64	set_robust_list		sys_set_robust_list
+274	64	get_robust_list		sys_get_robust_list
+275	common	splice			sys_splice
+276	common	tee			sys_tee
+277	common	sync_file_range		sys_sync_file_range
+278	64	vmsplice		sys_vmsplice
+279	64	move_pages		sys_move_pages
+280	common	utimensat		sys_utimensat
+281	common	epoll_pwait		sys_epoll_pwait
+283	common	timerfd_create		sys_timerfd_create
+285	common	fallocate		sys_fallocate
+286	common	timerfd_settime		sys_timerfd_settime
+287	common	timerfd_gettime		sys_timerfd_gettime
+288	common	accept4			sys_accept4
+291	common	epoll_create1		sys_epoll_create1
+292	common	dup3			sys_dup3
+293	common	pipe2			sys_pipe2
+294	common	inotify_init1		sys_inotify_init1
+297	64	rt_tgsigqueueinfo	sys_rt_tgsigqueueinfo
+298	common	perf_event_open		sys_perf_event_open
+299	64	recvmmsg		sys_recvmmsg
+300	common	fanotify_init		sys_fanotify_init
+301	common	fanotify_mark		sys_fanotify_mark
+302	common	prlimit64		sys_prlimit64
+303	common	name_to_handle_at	sys_name_to_handle_at
+304	common	open_by_handle_at	sys_open_by_handle_at
+305	common	clock_adjtime		sys_clock_adjtime
+306	common	syncfs			sys_syncfs
+307	64	sendmmsg		sys_sendmmsg
+308	common	setns			sys_setns
+309	common	getcpu			sys_getcpu
+310	64	process_vm_readv	sys_process_vm_readv
+311	64	process_vm_writev	sys_process_vm_writev
+312	common	kcmp			sys_kcmp
+313	common	finit_module		sys_finit_module
+
+518	x32	sendmsg			compat_sys_sendmsg
+519	x32	recvmsg			compat_sys_recvmsg
+521	x32	ptrace			compat_sys_ptrace
+522	x32	rt_sigpending		compat_sys_rt_sigpending
+523	x32	rt_sigtimedwait		compat_sys_rt_sigtimedwait
+524	x32	rt_sigqueueinfo		compat_sys_rt_sigqueueinfo
+525	x32	sigaltstack		compat_sys_sigaltstack
+526	x32	timer_create		compat_sys_timer_create
+527	x32	mq_notify		compat_sys_mq_notify
+528	x32	kexec_load		compat_sys_kexec_load
+529	x32	waitid			compat_sys_waitid
+530	x32	set_robust_list		compat_sys_set_robust_list
+531	x32	get_robust_list		compat_sys_get_robust_list
+532	x32	vmsplice		compat_sys_vmsplice
+533	x32	move_pages		compat_sys_move_pages
+536	x32	rt_tgsigqueueinfo	compat_sys_rt_tgsigqueueinfo
+537	x32	recvmmsg		compat_sys_recvmmsg
+538	x32	sendmmsg		compat_sys_sendmmsg
+539	x32	process_vm_readv	compat_sys_process_vm_readv
+540	x32	process_vm_writev	compat_sys_process_vm_writev
+541	x32	setsockopt		compat_sys_setsockopt
+542	x32	getsockopt		compat_sys_getsockopt
