@@ -16,6 +16,10 @@
 295	64	preadv			preadv(fd, iv, 2,offset)随机读到离散向量中
 296	64	pwritev			pwritev(fd, iv, 2,offset)随机写到离散向量中
 74	common	fsync			fsync(fd)同步metadata+data
+277	common	sync_file_range	sync_file_range(fd,offset,nbytes,SYNC_FILE_RANGE_WRITE)
+162	common	sync			sync()同步缓存的metadata+data
+306	common	syncfs			syncfs(fd)only-linux同fsync
+
 75	common	fdatasync		fdatasync(fd)只同步data部分
 43	common	access			access("./demo.txt", F_OK)判断文件存在
 95	common	umask			umask(0000)设置反掩码，默认0022
@@ -37,6 +41,7 @@
 8	common	lseek			lseek(fd, 200, int whence);
 9	common	mmap			prt=mmap(NULL,4096,PROT_READ,
                                     MAP_PRIVATE, fd, 1024);地址由OS分配
+26	common	msync			msync(prt,4096,MS_SYNC);刷新一段内存区域
 11	common	munmap			munmap(prt, 200)
 10	common	mprotect		mprotect(ptr, psize*10, PROT_NONE)内存保护
 103	common	syslog			syslog(LOG_INFO, "program started.");
@@ -46,6 +51,7 @@
 3	common	close		close(fd)
 32	common	dup			fd2=dup(fd1),fd1和fd2指向同一个file_struct
 33	common	dup2		fd2=dup2(fd1,fd2)复制fd并使用fd2指示的fd值
+72	common	fcntl			flag=fcntl(3,F_GETFL),读取文件状态和access mode
 #信号
 282	common	signalfd		signal(SIGINT, sigint_handler);
 289	common	signalfd4		signal(SIGINT, sigint_handler);
@@ -75,9 +81,13 @@
                             how:禁止读SHUT_RD,禁止写SHUT_WR,禁止读写SHUT_RDWR
 48	common	shutdown		shutdown(fd,how)限制socket权限
 #epoll
-213	common	epoll_create		sys_epoll_create
-214	64	epoll_ctl_old
-215	64	epoll_wait_old
+213	common	epoll_create		epoll_create(MAX_EVENTS)创建epoll实例返回fd
+291	common	epoll_create1		epoll_create1(0)功能同上
+233	common	epoll_ctl		epoll_ctl(epollfd, EPOLL_CTL_ADD, sock1, &ev)添加fd到epoll实例
+214	64	epoll_ctl_old       同上
+232	common	epoll_wait		epoll_wait(epollfd,events,MAX_EVENTS,-1);阻塞等待有fd产生事件
+281	common	epoll_pwait		epoll_wait(epollfd,events,MAX_EVENTS,-1，sigmask);多了信号掩码
+215	64	epoll_wait_old      同上
 
 51	common	getsockname		sys_getsockname
 52	common	getpeername		sys_getpeername
@@ -163,7 +173,6 @@
 110	common	getppid			sys_getppid
 24	common	sched_yield		sys_sched_yield
 25	common	mremap			sys_mremap
-26	common	msync			sys_msync
 27	common	mincore			sys_mincore
 28	common	madvise			sys_madvise
 34	common	pause			sys_pause
@@ -177,7 +186,6 @@
 56	common	clone			stub_clone
 58	common	vfork			stub_vfork
 59	64	execve			stub_execve
-72	common	fcntl			sys_fcntl
 73	common	flock			sys_flock
 78	common	getdents		sys_getdents
 82	common	rename			sys_rename
@@ -245,7 +253,6 @@
 158	common	arch_prctl		sys_arch_prctl
 159	common	adjtimex		sys_adjtimex
 160	common	setrlimit		sys_setrlimit
-162	common	sync			sys_sync
 163	common	acct			sys_acct
 164	common	settimeofday		sys_settimeofday
 165	common	mount			sys_mount
@@ -305,8 +312,6 @@
 229	common	clock_getres		sys_clock_getres
 230	common	clock_nanosleep		sys_clock_nanosleep
 231	common	exit_group		sys_exit_group
-232	common	epoll_wait		sys_epoll_wait
-233	common	epoll_ctl		sys_epoll_ctl
 234	common	tgkill			sys_tgkill
 235	common	utimes			sys_utimes
 236	64	vserver
@@ -345,17 +350,14 @@
 274	64	get_robust_list		sys_get_robust_list
 275	common	splice			sys_splice
 276	common	tee			sys_tee
-277	common	sync_file_range		sys_sync_file_range
 278	64	vmsplice		sys_vmsplice
 279	64	move_pages		sys_move_pages
 280	common	utimensat		sys_utimensat
-281	common	epoll_pwait		sys_epoll_pwait
 283	common	timerfd_create		sys_timerfd_create
 285	common	fallocate		sys_fallocate
 286	common	timerfd_settime		sys_timerfd_settime
 287	common	timerfd_gettime		sys_timerfd_gettime
 288	common	accept4			sys_accept4
-291	common	epoll_create1		sys_epoll_create1
 292	common	dup3			sys_dup3
 293	common	pipe2			sys_pipe2
 294	common	inotify_init1		sys_inotify_init1
@@ -368,7 +370,6 @@
 303	common	name_to_handle_at	sys_name_to_handle_at
 304	common	open_by_handle_at	sys_open_by_handle_at
 305	common	clock_adjtime		sys_clock_adjtime
-306	common	syncfs			sys_syncfs
 307	64	sendmmsg		sys_sendmmsg
 308	common	setns			sys_setns
 309	common	getcpu			sys_getcpu
