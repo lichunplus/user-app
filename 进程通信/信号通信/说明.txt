@@ -2,4 +2,34 @@
     1.按键触发 ctrl+c 。。。
     2.除数为0 非法访问地址空间 。。。
     3. kill函数/命令 给一个进程发送信号
-信号列表。 kill -l (1~30)
+    
+一、查看信号列表：
+#kill -l (编号1~64)
+    
+二、信号分类
+linux支持
+1. POSIX reliable signals(标准信号)
+2. POSIX real-time signals(实时信号)
+    
+三、信号配置
+1. 进程的每个信号都有一个变量(disposition)
+2. disposition的值决定了进程收到该信号后的行为
+Term    终止进程.
+Ign     忽略信号.
+Core    终止进程然后dump core
+Stop    暂停进程.
+Cont    恢复运行.
+signal handler  捕获信号时处理
+
+四、信号状态
+1. 进程处理信号称之为Delivery
+2. 信号从产生到递达之间的状态称之为pending
+3. 进程可以block某个信号，被block后信号一直处于pending
+4. 阻塞和忽略是不同的，阻塞的信号不会被Delivery，忽略是Delivery后的行为
+
+五、内核实现
+每个进程的PCB中都有三个“信号表”，分别为block、pending、handler
+block时信号屏蔽字，意味着只要这个位图中对应位有效后，对应的信号就被屏蔽，无法正常递达。 
+pending表的代表的意思是，信号我已经收到，但是还没有递达到正确位置。 
+handler表代表的意思是每个信号对应的处理方式。假如我们捕捉信号，自定义信号处理动作，则对应的handler表就会发生变化。
+参考： https://blog.csdn.net/sinat_36118270/article/details/73719061

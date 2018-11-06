@@ -45,6 +45,11 @@
 11	common	munmap			munmap(prt, 200)
 10	common	mprotect		mprotect(ptr, psize*10, PROT_NONE)内存保护
 103	common	syslog			syslog(LOG_INFO, "program started.");
+86	common	link            sys_link    unlink("/tmp/vmsg_vnc.sock");删除软连接
+                                        常规文件
+87	common	unlink          sys_unlink
+
+
 #fd操作
 2	common	open		fd=open("/dev/null",O_RDONLY);
 257	common	openat		openat(dir_fd,"../file",O_RDWR,0640);
@@ -67,6 +72,10 @@
 15	64	rt_sigreturn		信号处理函数执行完后自动调用
                             以便回到内核态，不返回，特殊系统调用
 62	common	kill			kill(pid,15)发送信号
+234	common	tgkill			sys_tgkill向特殊的进程发送信号，被用于实现pthread_kill
+34	common	pause	sys_pause   pause(),暂停线程执行，等待信号
+
+
 16	64	ioctl			ioctl(fd,KVM_RUN, 1);设备特殊方法
 #网络编程
 41	common	socket			socket(AF_INET,SOCK_STREAM,0)创建sock fd
@@ -94,10 +103,6 @@
 53	common	socketpair		sys_socketpair
 54	64	setsockopt		sys_setsockopt
 55	64	getsockopt		sys_getsockopt
-
-
-
-
 
 
 #pipe匿名管道
@@ -158,10 +163,19 @@
 63	common	uname			uname(&uts)获取系统名版本号和主机名struct utsname uts;
 
 
-#文件系统
+#内存管理
+char *p = malloc(available+Swap-free) 分配若干字节内存空间，不是系统调用
+char *p = realloc(p, 102400)改变内存大小,不是系统调用
+char *p = calloc(8,512),真分配内存，并初始化0，不是系统调用
+<=MMAP_THRESHOLD(默认128k),调用brk完成
+>MMAP_THRESHOLD调用mmap完成
+12	common	brk				brk(addr)设置进程data segment的结束位置
+free(p)
+
+
 
 #ID管理
-12	common	brk				brk(addr)设置进程data segment的结束位置
+
 39	common	getpid			getpid()获取进程PID
 102	common	getuid			uid_t ruid=getuid()进程属于User的id(root:0)
 104	common	getgid			sys_getgid
@@ -175,7 +189,6 @@
 25	common	mremap			sys_mremap
 27	common	mincore			sys_mincore
 28	common	madvise			sys_madvise
-34	common	pause			sys_pause
 35	common	nanosleep		sys_nanosleep
 36	common	getitimer		sys_getitimer
 37	common	alarm			sys_alarm
@@ -189,8 +202,6 @@
 73	common	flock			sys_flock
 78	common	getdents		sys_getdents
 82	common	rename			sys_rename
-86	common	link			sys_link
-87	common	unlink			sys_unlink
 88	common	symlink			sys_symlink
 89	common	readlink		sys_readlink
 90	common	chmod			sys_chmod
@@ -312,7 +323,7 @@
 229	common	clock_getres		sys_clock_getres
 230	common	clock_nanosleep		sys_clock_nanosleep
 231	common	exit_group		sys_exit_group
-234	common	tgkill			sys_tgkill
+
 235	common	utimes			sys_utimes
 236	64	vserver
 237	common	mbind			sys_mbind
