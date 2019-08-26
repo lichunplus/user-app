@@ -100,7 +100,7 @@
 
 51	common	getsockname		sys_getsockname
 52	common	getpeername		sys_getpeername
-53	common	socketpair		sys_socketpair
+53	common	socketpair		sys_socketpair	(创建一对已连接的AF UNIX fd，存放在sv[2]数组中)
 54	64	setsockopt		sys_setsockopt
 55	64	getsockopt		sys_getsockopt
 
@@ -127,13 +127,20 @@
 201	common	time			time_t epoch=time()//1970到现在的秒
 
 #进程
-57	common	fork			fork()创建子进程
+57	common	fork			fork()创建子进程,完全复制父进程的execution context
+
+56	common	clone			stub_clone 创建一个子进程，可选择复制父进程部分execution context
+                                       也可指定命名空间。需要提供一个内存空间作栈空间，以及一个入口函数
+                                       
 60	common	exit			exit(-1),返回值被父进程的wait捕获
                             wait相关调用用于监控某个进程状态改变
 61	common	wait4			过时，请使用waitid或waitpid
 247	64	waitid			waitpid(cpid, &status, WUNTRACED | WCONTINUED)
 
 520	x32	execve			execve("/bin/ls",["-al","/"],NULL)加载并执行ELF文件
+
+
+
 
 # AIO
 206	common	io_setup		io_setup(MAX_EVENTS, &ctx)初始化AIO上下文
@@ -161,7 +168,8 @@
 #系统管理                   reboot or enable/disable Ctrl-Alt-Del
 169	common	reboot			reboot(LINUX_REBOOT_CMD_POWER_OFF)关机
 63	common	uname			uname(&uts)获取系统名版本号和主机名struct utsname uts;
-
+170	common	sethostname		sys_sethostname("node1", 5) 设置主机名，通过命令hostname
+                            可以查看到主机名
 
 #内存管理
 char *p = malloc(available+Swap-free) 分配若干字节内存空间，不是系统调用
@@ -196,7 +204,7 @@ free(p)
 40	common	sendfile		sys_sendfile64
 46	64	sendmsg			sys_sendmsg
 47	64	recvmsg			sys_recvmsg
-56	common	clone			stub_clone
+
 58	common	vfork			stub_vfork
 59	64	execve			stub_execve
 73	common	flock			sys_flock
@@ -270,7 +278,7 @@ free(p)
 166	common	umount2			sys_umount
 167	common	swapon			sys_swapon
 168	common	swapoff			sys_swapoff
-170	common	sethostname		sys_sethostname
+
 171	common	setdomainname		sys_setdomainname
 172	common	iopl			stub_iopl
 173	common	ioperm			sys_ioperm
@@ -383,6 +391,7 @@ free(p)
 305	common	clock_adjtime		sys_clock_adjtime
 307	64	sendmmsg		sys_sendmmsg
 308	common	setns			sys_setns
+
 309	common	getcpu			sys_getcpu
 310	64	process_vm_readv	sys_process_vm_readv
 311	64	process_vm_writev	sys_process_vm_writev

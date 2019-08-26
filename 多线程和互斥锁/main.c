@@ -9,6 +9,7 @@ static pthread_mutex_t mut;
 void *thread1_handler()
 {
     int i;
+    while(1);
     for (i = 0; i < 3; i++)
     {
         pthread_mutex_lock(&mut);
@@ -21,6 +22,7 @@ void *thread1_handler()
 void *thread2_handler()
 {
     int i;
+    while(1);
     for (i = 0; i < 3; i++)
     {
         pthread_mutex_lock(&mut);
